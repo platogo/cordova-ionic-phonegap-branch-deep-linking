@@ -156,8 +156,7 @@
     // add new (remove old already done in updateBranchURIScheme)
     manifest['manifest']['application'][0]['activity'][mainActivityIndex]['intent-filter'] = intentFilters.concat([{
       '$': {
-        'android:name': androidName,
-        'android:autoVerify': 'true'
+        'android:name': androidName
       },
       'action': [{
         '$': {
