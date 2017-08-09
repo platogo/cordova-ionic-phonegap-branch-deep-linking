@@ -58,7 +58,7 @@ Branch.prototype.initSession = function (deepLinkDataListener) {
     // missing deep link data return
     console.warn('BRANCH SDK: No callback in initSession and no global DeepLinkHandler method. No Branch deep link data will be returned. Docs https://goo.gl/GijGKP')
   } else if (!disableGlobalListenersWarnings && window.DeepLinkHandler !== undefined && window.DeepLinkHandler.toString() !== deepLinkDataParser.toString()) {
-    // deprecated 3.0.0: open and non deep link data will pass into DeepLinkHandler
+    // deprecated 2.5.0: open and non deep link data will pass into DeepLinkHandler
     console.warn('BRANCH SDK: Your DeepLinkHandler has changed. It will now pass non-Branch data. Docs https://goo.gl/GijGKP')
   } else {
     // from iOS and Android SDKs to JavaScript
@@ -77,6 +77,12 @@ Branch.prototype.setDebug = function (isEnabled) {
   this.debugMode = isEnabled
 
   return execute('setDebug', [isEnabled])
+}
+
+Branch.prototype.setCookieBasedMatching = function (linkDomain) {
+  if (linkDomain && deviceVendor.indexOf('Apple') < 0) {
+    return execute('setCookieBasedMatching', [linkDomain])
+  }
 }
 
 Branch.prototype.getFirstReferringParams = function () {
@@ -114,6 +120,21 @@ Branch.prototype.userCompletedAction = function (action, metaData) {
   }
 
   return execute('userCompletedAction', args)
+}
+
+Branch.prototype.sendCommerceEvent = function (action, metaData) {
+  if (!action) {
+    return new Promise(function (resolve, reject) {
+      reject(new Error('Please set a commerce event'))
+    })
+  }
+
+  var args = [action]
+  if (metaData) {
+    args.push(metaData)
+  }
+
+  return execute('sendCommerceEvent', args)
 }
 
 Branch.prototype.createBranchUniversalObject = function (options) {

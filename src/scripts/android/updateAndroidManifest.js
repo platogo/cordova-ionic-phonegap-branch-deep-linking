@@ -16,6 +16,7 @@
     var mainActivityIndex = getMainLaunchActivityIndex(manifest['manifest']['application'][0]['activity'])
 
     // update manifest
+    manifest = updateMultidex(manifest)
     manifest = updateBranchMetaData(manifest, preferences)
     manifest = updateBranchReferrerTracking(manifest)
     manifest = updateLaunchOptionToSingleTask(manifest, mainActivityIndex, preferences)
@@ -53,6 +54,14 @@
     }
     manifest['manifest']['application'][0]['meta-data'] = metadatas.concat(metadata)
 
+    return manifest
+  }
+
+  // adds to <application> for multidex (needed for all the frameworks)
+  //    <application android:name="android.support.multidex.MultiDexApplication" >
+  //    </application>
+  function updateMultidex (manifest) {
+    manifest['manifest']['application'][0]['$']['android:name'] = 'android.support.multidex.MultiDexApplication'
     return manifest
   }
 
@@ -194,15 +203,12 @@
 
         intentFilterData.push(getAppLinkIntentFilterDictionary(linkDomain))
         intentFilterData.push(getAppLinkIntentFilterDictionary(alternate))
-      } else if (linkDomain.indexOf('bnc.lt') !== -1) {
-        // bnc.lt
+      } else {
+        // bnc.lt and custom domains
         if (preferences.androidPrefix === null) {
           throw new Error('BRANCH SDK: Invalid "android-prefix" in <branch-config> in your config.xml. Docs https://goo.gl/GijGKP')
         }
         intentFilterData.push(getAppLinkIntentFilterDictionary(linkDomain, preferences.androidPrefix))
-      } else {
-        // custom
-        intentFilterData.push(getAppLinkIntentFilterDictionary(linkDomain))
       }
     }
 
