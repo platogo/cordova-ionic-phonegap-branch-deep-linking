@@ -122,9 +122,10 @@
       },
       branchInit: function() {
         // Branch initialization
-        Branch.initSession(function(data) {
+        if (data['+clicked_branch_link']) {
           // read deep link data on click
-          alert('Deep Link Data: ' + JSON.stringify(data));
+          console.log('Trigger DeepLinkHandler()')
+          alert('Deep Link Data: ' + JSON.stringify(data))
         });
       }
     };
@@ -159,8 +160,10 @@
         function branchInit() {
           // Branch initialization
           Branch.initSession(function(data) {
-            // read deep link data on click
-            alert('Deep Link Data: ' + JSON.stringify(data));
+            if (data['+clicked_branch_link']) {
+              // read deep link data on click
+              alert('Deep Link Data: ' + JSON.stringify(data));
+            }
           });
         }
       });
@@ -202,8 +205,10 @@
           // only on devices
           if (!platform.is('cordova')) { return }
           Branch.initSession(data => {
-            // read deep link data on click
-            alert('Deep Link Data: ' + JSON.stringify(data));
+            if (data['+clicked_branch_link']) {
+              // read deep link data on click
+              alert('Deep Link Data: ' + JSON.stringify(data));
+            }
           });
         }
       }
@@ -256,8 +261,10 @@
 
     // Branch initialization
     Branch.initSession(function(data) {
-      // read deep link data on click
-      alert('Deep Link Data: ' + JSON.stringify(data))
+      if (data['+clicked_branch_link']) {
+        // read deep link data on click
+        alert('Deep Link Data: ' + JSON.stringify(data))
+      }
     }).then(function(res) {
       alert('Response: ' + JSON.stringify(res))
     }).catch(function(err) {
@@ -401,8 +408,10 @@
     ```js
     // Branch initialization within your deviceready and resume
     Branch.initSession(function(deepLinkData) {
-      // handler for deep link data on click
-      alert('Response: ' + JSON.stringify(deepLinkData))
+      if (data['+clicked_branch_link']) {
+        // handler for deep link data on click
+        alert('Response: ' + JSON.stringify(deepLinkData))
+      }
     })
     ```
 
@@ -707,18 +716,18 @@
     | | iOS | Details | Android | Details
     | --- | :-: | --- | :-: | ---
     | Facebook NewsFeed | ✅ | Works when [DeepViews](https://dashboard.branch.io/settings/deepviews) are enabled | ✅ |
-    | Facebook Messanger | ✅ | Works when [DeepViews](https://dashboard.branch.io/settings/deepviews) are enabled | ✅ | Works except the `app.link` domain is not click-able |
+    | Facebook Messanger | ✅ | Works when [DeepViews](https://dashboard.branch.io/settings/deepviews) are enabled | ✅ | |
     | Twitter | ✅ | | ✅ |
     | Pinterest | ✅ | Works when [DeepViews](https://dashboard.branch.io/settings/deepviews) are enabled | ✅ |
     | Slack | ✅ | | ✅ | |
-    | Chrome address bar | ✅ | | ✅ |
+    | Chrome address bar | 🅾️ | | 🅾️ |
     | Chrome web page | ✅ | | ✅ |
-    | FireFox address bar | 🅾️ | | ✅ |
+    | FireFox address bar | 🅾️ | | 🅾️ |
     | FireFox web page | ✅ | | ✅ |
     | Safari address bar | 🅾️ | | |
     | Safari web page | ✅ | | |
     | WeChat | ✅ | Works when [DeepViews](https://dashboard.branch.io/settings/deepviews) are enabled | ✅ |
-    | WhatsApp | ✅ | | ✅ |
+    | WhatsApp | ✅ | `app.link` requires https/http to be clickable | ✅ | `app.link` requires https/http to be clickable
     | Hangouts | ✅ | | ✅ |
     | iMessage | ✅ | | |
     | Apple Mail | ✅ | | |
