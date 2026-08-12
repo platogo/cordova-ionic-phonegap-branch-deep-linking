@@ -15,13 +15,83 @@ NSString * const pluginVersion = @"6.6.1";
 - (void)pluginInitialize
 {
   self.branchUniversalObjArray = [[NSMutableArray alloc] init];
-  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleOpenURLNotification:) name:CDVPluginHandleOpenURLNotification object:nil];
+
+  // Note: CDVPlugin base class already registers handleOpenURL: for
+  // CDVPluginHandleOpenURLNotification — no manual observer needed for URL schemes.
+
+  // Subscribe to universal link notifications (NOT auto-registered by CDVPlugin base class)
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(handleContinueUserActivityNotification:)
+                                               name:CDVPluginContinueUserActivityNotification
+                                             object:nil];
+
+  // Cold boot fallback: observe CDVPageDidLoadNotification to check for any universal link
+  // user activity that may have arrived before plugin initialization completed.
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(handlePageDidLoad:)
+                                               name:CDVPageDidLoadNotification
+                                             object:nil];
 }
 
-- (void)handleOpenURLNotification:(NSNotification*)notification
+#pragma mark - Scene-Based Deep Link Handlers
+
+// Override from CDVPlugin base class — called automatically via CDVPluginHandleOpenURLNotification.
+// Handles URL scheme deep links for both app resume and cold boot.
+- (void)handleOpenURL:(NSNotification*)notification
 {
     NSURL* url = [notification object];
-    [[Branch getInstance] application:[UIApplication sharedApplication]  openURL:url options:@{}];
+    NSDictionary* options = notification.userInfo ?: @{};
+    [[Branch getInstance] application:[UIApplication sharedApplication] openURL:url options:options];
+}
+
+// Handles universal link deep links on app resume (scene:continueUserActivity:)
+- (void)handleContinueUserActivityNotification:(NSNotification*)notification
+{
+    NSUserActivity* userActivity = [notification object];
+    if (userActivity && [userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb]) {
+        [[Branch getInstance] continueUserActivity:userActivity];
+    }
+}
+
+// Cold boot fallback: when CDVPageDidLoad fires, check if SceneDelegate buffered
+// a universal link user activity that arrived in connectionOptions before plugins loaded.
+- (void)handlePageDidLoad:(NSNotification*)notification
+{
+    // Remove observer — we only need this check once
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:CDVPageDidLoadNotification
+                                                  object:nil];
+
+    // Access the buffered launch user activity from SceneDelegate
+    Class sceneDelegateClass = NSClassFromString(@"SceneDelegate");
+    if (!sceneDelegateClass) {
+        // Try with the app module prefix (Swift class name mangling)
+        NSString *appName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleExecutable"];
+        appName = [appName stringByReplacingOccurrencesOfString:@"-" withString:@"_"];
+        appName = [appName stringByReplacingOccurrencesOfString:@" " withString:@"_"];
+        sceneDelegateClass = NSClassFromString([NSString stringWithFormat:@"%@.SceneDelegate", appName]);
+    }
+
+    if (sceneDelegateClass) {
+        SEL selector = NSSelectorFromString(@"launchUserActivity");
+        if ([sceneDelegateClass respondsToSelector:selector]) {
+            #pragma clang diagnostic push
+            #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+            NSUserActivity *activity = [sceneDelegateClass performSelector:selector];
+            #pragma clang diagnostic pop
+            if (activity && [activity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb]) {
+                // Clear the buffered activity
+                SEL clearSelector = NSSelectorFromString(@"setLaunchUserActivity:");
+                if ([sceneDelegateClass respondsToSelector:clearSelector]) {
+                    #pragma clang diagnostic push
+                    #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
+                    [sceneDelegateClass performSelector:clearSelector withObject:nil];
+                    #pragma clang diagnostic pop
+                }
+                [[Branch getInstance] continueUserActivity:activity];
+            }
+        }
+    }
 }
 
 #pragma mark - Private APIs
