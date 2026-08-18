@@ -45,7 +45,6 @@ SOFTWARE.
   <hook src="src/scripts/hooks/afterPrepare.js" type="after_plugin_add" />
   <hook src="src/scripts/hooks/beforePrepare.js" type="before_prepare" />
   <hook src="src/scripts/hooks/afterPrepare.js" type="after_prepare" />
-  <hook src="src/scripts/ios/patchSceneDelegate.js" type="after_prepare" />
 
   <!-- JavaScript -->
   <js-module src="src/index.js" name="Branch">
@@ -83,6 +82,8 @@ SOFTWARE.
       <header-file src="src/ios/BranchSDK.h" />
       <source-file src="src/ios/BranchSDK.m" />
       <source-file src="src/ios/AppDelegate+BranchSdk.m" />
+      <header-file src="src/ios/CDVSceneDelegate+BranchSDK.h" />
+      <source-file src="src/ios/CDVSceneDelegate+BranchSDK.m" />
 
       <podspec>
           <config>

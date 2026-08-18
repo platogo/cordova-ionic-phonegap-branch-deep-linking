@@ -25,12 +25,8 @@ NSString * const pluginVersion = @"6.6.1";
                                                name:CDVPluginContinueUserActivityNotification
                                              object:nil];
 
-  // Cold boot fallback: observe CDVPageDidLoadNotification to check for any universal link
-  // user activity that may have arrived before plugin initialization completed.
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(handlePageDidLoad:)
-                                               name:CDVPageDidLoadNotification
-                                             object:nil];
+  // Cold boot via a tapped universal link is handled directly by
+  // CDVSceneDelegate+BranchSDK.m, which calls Branch before this plugin even initializes.
 }
 
 #pragma mark - Scene-Based Deep Link Handlers
@@ -50,47 +46,6 @@ NSString * const pluginVersion = @"6.6.1";
     NSUserActivity* userActivity = [notification object];
     if (userActivity && [userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb]) {
         [[Branch getInstance] continueUserActivity:userActivity];
-    }
-}
-
-// Cold boot fallback: when CDVPageDidLoad fires, check if SceneDelegate buffered
-// a universal link user activity that arrived in connectionOptions before plugins loaded.
-- (void)handlePageDidLoad:(NSNotification*)notification
-{
-    // Remove observer — we only need this check once
-    [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:CDVPageDidLoadNotification
-                                                  object:nil];
-
-    // Access the buffered launch user activity from SceneDelegate
-    Class sceneDelegateClass = NSClassFromString(@"SceneDelegate");
-    if (!sceneDelegateClass) {
-        // Try with the app module prefix (Swift class name mangling)
-        NSString *appName = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleExecutable"];
-        appName = [appName stringByReplacingOccurrencesOfString:@"-" withString:@"_"];
-        appName = [appName stringByReplacingOccurrencesOfString:@" " withString:@"_"];
-        sceneDelegateClass = NSClassFromString([NSString stringWithFormat:@"%@.SceneDelegate", appName]);
-    }
-
-    if (sceneDelegateClass) {
-        SEL selector = NSSelectorFromString(@"launchUserActivity");
-        if ([sceneDelegateClass respondsToSelector:selector]) {
-            #pragma clang diagnostic push
-            #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-            NSUserActivity *activity = [sceneDelegateClass performSelector:selector];
-            #pragma clang diagnostic pop
-            if (activity && [activity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb]) {
-                // Clear the buffered activity
-                SEL clearSelector = NSSelectorFromString(@"setLaunchUserActivity:");
-                if ([sceneDelegateClass respondsToSelector:clearSelector]) {
-                    #pragma clang diagnostic push
-                    #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-                    [sceneDelegateClass performSelector:clearSelector withObject:nil];
-                    #pragma clang diagnostic pop
-                }
-                [[Branch getInstance] continueUserActivity:activity];
-            }
-        }
     }
 }
 
@@ -392,7 +347,7 @@ NSString * const pluginVersion = @"6.6.1";
 - (void)setConsumerProtectionAttributionLevel:(CDVInvokedUrlCommand*)command {
     NSString *level = [command.arguments objectAtIndex:0];
     BranchAttributionLevel attributionLevel;
-    
+
     if ([level isEqualToString:@"FULL"]) {
         attributionLevel = BranchAttributionLevelFull;
     } else if ([level isEqualToString:@"REDUCED"]) {
@@ -402,14 +357,14 @@ NSString * const pluginVersion = @"6.6.1";
     } else if ([level isEqualToString:@"NONE"]) {
         attributionLevel = BranchAttributionLevelNone;
     } else {
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR 
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
                                                         messageAsString:@"Invalid attribution level"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         return;
     }
-    
+
     [[Branch getInstance] setConsumerProtectionAttributionLevel:attributionLevel];
-    
+
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
@@ -418,7 +373,7 @@ NSString * const pluginVersion = @"6.6.1";
     id rawWaitTime = [command.arguments objectAtIndex:0];
 
     if (![rawWaitTime isKindOfClass:[NSNumber class]]) {
-      CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR 
+      CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
                                                           messageAsString:@"Invalid waitTime. waitTime must be a number."];
       [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
       return;
@@ -433,9 +388,9 @@ NSString * const pluginVersion = @"6.6.1";
 
 - (void)setAnonID:(CDVInvokedUrlCommand*)command {
     NSString *anonID = [command.arguments objectAtIndex:0];
-    
+
     if (![anonID isKindOfClass: [NSString class]]) {
-      CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR 
+      CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
                                                           messageAsString:@"Invalid anonID. anonID must be a string."];
       [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
       return;
@@ -454,13 +409,13 @@ NSString * const pluginVersion = @"6.6.1";
   // Checks each variable for the correct kind of class.
   // We don't need a separate 'nil' check because isKindOfClass also returns NO if variable is nil.
   if (![odmInfo isKindOfClass: [NSString class]]) {
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR 
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
                                                         messageAsString:@"Invalid odmInfo. odmInfo must be a string."];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     return;
   }
   if (![firstOpenTimestamp isKindOfClass: [NSNumber class]]) {
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR 
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
                                                         messageAsString:@"Invalid firstOpenTimestamp. firstOpenTimestamp must be a number."];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     return;
@@ -649,7 +604,7 @@ NSString * const pluginVersion = @"6.6.1";
     }
   }
     [branchUniversalObj showShareSheetWithLinkProperties:linkProperties andShareText:shareText fromViewController:self.viewController completionWithError:^(NSString * _Nullable activityType, BOOL completed, NSError * _Nullable error) {
-        
+
         int listenerCallbackId = [[command.arguments objectAtIndex:0] intValue];
 
         if (completed) {
@@ -754,7 +709,7 @@ NSString * const pluginVersion = @"6.6.1";
     BranchUniversalObject *branchUniversalObj = [branchUniversalObjDict objectForKey:@"branchUniversalObj"];
 
     BranchLinkProperties *linkProperties = [BranchLinkProperties new];
-    
+
     NSDictionary *arg1 = [command.arguments objectAtIndex:2];
     NSDictionary *arg2 = [command.arguments objectAtIndex:3];
 
@@ -790,7 +745,7 @@ NSString * const pluginVersion = @"6.6.1";
     NSMutableDictionary *qrCodeSettingsMap = [command.arguments objectAtIndex:0];
 
     BranchQRCode *qrCode = [BranchQRCode new];
-    
+
     if (qrCodeSettingsMap[@"codeColor"]) {
         qrCode.codeColor = [self colorWithHexString:qrCodeSettingsMap[@"codeColor"]];
     }
@@ -816,7 +771,7 @@ NSString * const pluginVersion = @"6.6.1";
 
     [qrCode getQRCodeAsData:branchUniversalObj linkProperties:linkProperties completion:^(NSData * _Nonnull qrCodeData, NSError * _Nonnull error) {
       CDVPluginResult* pluginResult = nil;
-        
+
         if (!error) {
             NSString* imageString = [qrCodeData base64EncodedStringWithOptions:nil];
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:imageString];
@@ -842,19 +797,19 @@ NSString * const pluginVersion = @"6.6.1";
             alpha = [self colorComponentFrom: colorString start: 0 length: 1];
             red   = [self colorComponentFrom: colorString start: 1 length: 1];
             green = [self colorComponentFrom: colorString start: 2 length: 1];
-            blue  = [self colorComponentFrom: colorString start: 3 length: 1];          
+            blue  = [self colorComponentFrom: colorString start: 3 length: 1];
             break;
         case 6: // #RRGGBB
             alpha = 1.0f;
             red   = [self colorComponentFrom: colorString start: 0 length: 2];
             green = [self colorComponentFrom: colorString start: 2 length: 2];
-            blue  = [self colorComponentFrom: colorString start: 4 length: 2];                      
+            blue  = [self colorComponentFrom: colorString start: 4 length: 2];
             break;
         case 8: // #AARRGGBB
             alpha = [self colorComponentFrom: colorString start: 0 length: 2];
             red   = [self colorComponentFrom: colorString start: 2 length: 2];
             green = [self colorComponentFrom: colorString start: 4 length: 2];
-            blue  = [self colorComponentFrom: colorString start: 6 length: 2];                      
+            blue  = [self colorComponentFrom: colorString start: 6 length: 2];
             break;
         default:
             NSLog(@"Error: Invalid color value. It should be a hex value of the form #RBG, #ARGB, #RRGGBB, or #AARRGGBB");
