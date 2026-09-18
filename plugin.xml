@@ -80,7 +80,7 @@ SOFTWARE.
       <header-file src="src/ios/BranchNPM.h" />
       <header-file src="src/ios/BranchSDK.h" />
       <source-file src="src/ios/BranchSDK.m" />
-      <source-file src="src/ios/AppDelegate+BranchSdk.m" />
+      <source-file src="src/ios/CDVAppDelegate+BranchSdk.m" />
       <header-file src="src/ios/CDVSceneDelegate+BranchSDK.h" />
       <source-file src="src/ios/CDVSceneDelegate+BranchSDK.m" />
 
