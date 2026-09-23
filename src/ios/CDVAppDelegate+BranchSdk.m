@@ -1,4 +1,4 @@
-#import "AppDelegate.h"
+#import "Cordova/CDVAppDelegate.h"
 
 #import "BranchNPM.h"
 
@@ -11,13 +11,13 @@
 // Provides Ionic Capacitor compatibility
 #import <Cordova/CDVPlugin.h>
 
-@interface AppDelegate (BranchSDK)
+@interface CDVAppDelegate (BranchSDK)
 
 - (BOOL)application:(UIApplication *)application continueUserActivity:(NSUserActivity *)userActivity restorationHandler:(void (^)(NSArray * _Nullable))restorationHandler;
 
 @end
 
-@implementation AppDelegate (BranchSDK)
+@implementation CDVAppDelegate (BranchSDK)
 
 // Respond to URI scheme links
 - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {

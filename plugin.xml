@@ -67,7 +67,7 @@ SOFTWARE.
   </platform>
 
   <!-- iOS -->
-  <platform name="ios">
+  <platform name="ios" package="swift">
       <plugins-plist key="BranchSDK" string="BranchSDK" />
 
       <config-file target="config.xml" parent="/*">
@@ -80,7 +80,7 @@ SOFTWARE.
       <header-file src="src/ios/BranchNPM.h" />
       <header-file src="src/ios/BranchSDK.h" />
       <source-file src="src/ios/BranchSDK.m" />
-      <source-file src="src/ios/AppDelegate+BranchSdk.m" />
+      <source-file src="src/ios/CDVAppDelegate+BranchSdk.m" />
       <header-file src="src/ios/CDVSceneDelegate+BranchSDK.h" />
       <source-file src="src/ios/CDVSceneDelegate+BranchSDK.m" />
 
@@ -89,7 +89,7 @@ SOFTWARE.
               <source url="https://cdn.cocoapods.org/"/>
           </config>
           <pods>
-              <pod name="BranchSDK" spec="~> 3.14.0" />
+              <pod name="BranchSDK" spec="~> 3.14.0" nospm="true" />
           </pods>
       </podspec>
   </platform>
